@@ -22,7 +22,7 @@ def update_status():
         is_playing = '@attr' in track and track['@attr'].get('nowplaying') == 'true'
         
         data = {
-            "name": "Kasahi",
+            "name": "hatefulvrc",
             "status": "playing" if is_playing else "offline",
             "track": track['name'] if is_playing else None,
             "artist": track['artist']['#text'] if is_playing else None
