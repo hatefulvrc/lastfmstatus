@@ -2,30 +2,40 @@ import requests
 import json
 import os
 
-# Get the API Key from the environment variable set in GitHub Actions
+# Configuration
 API_KEY = os.environ.get("LASTFM_API_KEY")
 USER = "lucidily"
-URL = f"http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={USER}&api_key={API_KEY}&format=json&limit=1"
 
-def update_status():
+def get_data():
     try:
-        response = requests.get(URL).json()
+        # 1. Fetch Recent Track
+        recent_url = f"http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={USER}&api_key={API_KEY}&format=json&limit=1"
+        recent_res = requests.get(recent_url).json()
+        tracks = recent_res.get('recenttracks', {}).get('track', [])
+        is_playing = False
+        track_name = None
+        track_artist = None
         
-        # Safely access the track list
-        tracks = response.get('recenttracks', {}).get('track', [])
-        if not tracks:
-            return
+        if tracks:
+            track = tracks[0]
+            is_playing = '@attr' in track and track['@attr'].get('nowplaying') == 'true'
+            if is_playing:
+                track_name = track['name']
+                track_artist = track['artist']['#text']
 
-        track = tracks[0]
-        
-        # Check if currently playing
-        is_playing = '@attr' in track and track['@attr'].get('nowplaying') == 'true'
-        
+        # 2. Fetch Top Artist (Last 7 Days)
+        top_artist_url = f"http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user={USER}&api_key={API_KEY}&format=json&period=7day&limit=1"
+        top_res = requests.get(top_artist_url).json()
+        top_artist = top_res.get('topartists', {}).get('artist', [])
+        top_artist_name = top_artist[0]['name'] if top_artist else "N/A"
+
+        # 3. Construct Data
         data = {
             "name": "hatefulvrc",
             "status": "playing" if is_playing else "offline",
-            "track": track['name'] if is_playing else None,
-            "artist": track['artist']['#text'] if is_playing else None
+            "current_track": track_name,
+            "current_artist": track_artist,
+            "top_artist_7days": top_artist_name
         }
         
         # Save to file
@@ -38,4 +48,4 @@ def update_status():
         print(f"Error fetching data: {e}")
 
 if __name__ == "__main__":
-    update_status()
+    get_data()
