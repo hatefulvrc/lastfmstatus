@@ -1,8 +1,8 @@
 name: Update Last.fm Status
 on:
   schedule:
-    - cron: "*/2 * * * *" # Runs every 2 minutes
-  workflow_dispatch:      # Allows you to run it manually for testing
+    - cron: "*/10 * * * *" 
+  workflow_dispatch:      
 
 jobs:
   update:
