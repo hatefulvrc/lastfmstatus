@@ -1,6 +1,7 @@
 {
     "name": "hatefulvrc",
     "status": "playing",
-    "track": "LIE LIE LIE",
-    "artist": "Dro Kenji"
+    "current_track": "LIE LIE LIE",
+    "current_artist": "Dro Kenji",
+    "top_artist_7days": "Cutty Vibez"
 }
