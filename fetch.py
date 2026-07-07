@@ -37,7 +37,6 @@ def fetch_data():
         # Construct final data with spaces in keys
         data = {
             "Name": "hatefulvrc",
-            "Status": "playing" if is_playing else "offline",
             "Scrobbles": total_scrobbles,
             "Top Artist": top_artist_name,
             "Top Plays": top_artist_plays
