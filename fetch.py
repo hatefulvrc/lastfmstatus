@@ -2,50 +2,54 @@ import requests
 import json
 import os
 
-# Configuration
 API_KEY = os.environ.get("LASTFM_API_KEY")
 USER = "lucidily"
+BASE_URL = "http://ws.audioscrobbler.com/2.0/"
 
-def get_data():
+def fetch_data():
     try:
-        # 1. Fetch Recent Track
-        recent_url = f"http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={USER}&api_key={API_KEY}&format=json&limit=1"
+        # 1. Get Total Scrobbles
+        info_url = f"{BASE_URL}?method=user.getinfo&user={USER}&api_key={API_KEY}&format=json"
+        info_res = requests.get(info_url).json()
+        total_scrobbles = info_res.get('user', {}).get('playcount', "0")
+
+        # 2. Get Top Artist (Last 7 Days)
+        top_url = f"{BASE_URL}?method=user.gettopartists&user={USER}&api_key={API_KEY}&period=7day&limit=1&format=json"
+        top_res = requests.get(top_url).json()
+        top_artists = top_res.get('topartists', {}).get('artist', [])
+        
+        top_artist_name = "None"
+        top_artist_plays = "0"
+        
+        if top_artists:
+            top_artist_name = top_artists[0]['name']
+            top_artist_plays = top_artists[0]['playcount']
+
+        # 3. Get Recent Track (Now Playing Status)
+        recent_url = f"{BASE_URL}?method=user.getrecenttracks&user={USER}&api_key={API_KEY}&limit=1&format=json"
         recent_res = requests.get(recent_url).json()
         tracks = recent_res.get('recenttracks', {}).get('track', [])
-        is_playing = False
-        track_name = None
-        track_artist = None
         
-        if tracks:
-            track = tracks[0]
-            is_playing = '@attr' in track and track['@attr'].get('nowplaying') == 'true'
-            if is_playing:
-                track_name = track['name']
-                track_artist = track['artist']['#text']
+        is_playing = False
+        if tracks and '@attr' in tracks[0] and tracks[0]['@attr'].get('nowplaying') == 'true':
+            is_playing = True
 
-        # 2. Fetch Top Artist (Last 7 Days)
-        top_artist_url = f"http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user={USER}&api_key={API_KEY}&format=json&period=7day&limit=1"
-        top_res = requests.get(top_artist_url).json()
-        top_artist = top_res.get('topartists', {}).get('artist', [])
-        top_artist_name = top_artist[0]['name'] if top_artist else "N/A"
-
-        # 3. Construct Data
+        # Construct final data with spaces in keys
         data = {
-            "name": "hatefulvrc",
-            "status": "playing" if is_playing else "offline",
-            "current_track": track_name,
-            "current_artist": track_artist,
-            "top_artist_7days": top_artist_name
+            "Name": "hatefulvrc",
+            "Status": "playing" if is_playing else "offline",
+            "Scrobbles": total_scrobbles,
+            "Top Artist": top_artist_name,
+            "Top Plays": top_artist_plays
         }
         
-        # Save to file
         with open("status.json", "w") as f:
             json.dump(data, f, indent=4)
             
-        print("Status successfully updated.")
+        print("Data successfully updated.")
         
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
-    get_data()
+    fetch_data()
